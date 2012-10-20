@@ -12,28 +12,26 @@
 
 // ====[ INCLUDES ]====================================================
 #include <sourcemod>
-//#include <sdktools>
 
 // ====[ CONSTANTS ]===================================================
 #define PLUGIN_NAME			"Jagd balancer"
-#define PLUGIN_AUTHOR		"Root"
 #define PLUGIN_VERSION		"1.0"
-#define PLUGIN_CONTACT		"http://steamcommunity.com/id/zadroot/"
-#define SPEC				1
-#define ALLIES				2
-#define AXIS				3
 
-// ====[ VARIABLES ]===================================================
-new Handle:g_BonusRoundValue = INVALID_HANDLE;
+enum
+{
+	Team_Spectator = 1,
+	Team_Allies,
+	Team_Axis,
+};
 
 // ====[ PLUGIN ]======================================================
 public Plugin:myinfo =
 {
 	name			= PLUGIN_NAME,
-	author			= PLUGIN_AUTHOR,
+	author			= "Root",
 	description		= "Swap teams at round start on jagd",
 	version			= PLUGIN_VERSION,
-	url				= PLUGIN_CONTACT
+	url				= "http://dodsplugins.com/"
 };
 
 /* OnPluginStart()
@@ -43,20 +41,17 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	// Create convars
-	CreateConVar("jagdswitcher_version", PLUGIN_VERSION, "Plugin version", FCVAR_NOTIFY|FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED);
-
-	// Check value for dod_bonusroundtime cvar then create timer with same value
-	g_BonusRoundValue = FindConVar("dod_bonusroundtime");
+	CreateConVar("jagdswitcher_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_NOTIFY|FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED);
 
 	// Hook events
-	HookEvent("dod_round_win", Event_round_end);
+	HookEvent("dod_round_start", Event_round_start, EventHookMode_Pre);
 }
 
 /* Event_round_starts()
  *
  * Called when a round starts.
  * --------------------------------------------------------------------- */
-public Event_round_end(Handle:event, const String:name[], bool:dontBroadcast)
+public Event_round_start(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	// Check if current map is jagd
 	decl String:curmap[64];
@@ -65,8 +60,7 @@ public Event_round_end(Handle:event, const String:name[], bool:dontBroadcast)
 	{
 		// Yep, its jagd. Let's call switch event when round starts and event when player changes team
 		HookEvent("player_team", Event_changeteam, EventHookMode_Pre);
-		new Float:time = float(GetConVarInt(g_BonusRoundValue));
-		CreateTimer(time, StartSwitch);
+		SwitchTeams();
 	}
 }
 
@@ -84,16 +78,7 @@ public Action:Event_changeteam(Handle:event, const String:name[], bool:dontBroad
 	return Plugin_Continue;
 }
 
-/* StartSwitch()
- *
- * Switch a teams on a delay.
- * --------------------------------------------------------------------- */
-public Action:StartSwitch(Handle:timer)
-{
-	SwitchTeams();
-}
-
-/* GetOtherTeam()
+/* SwitchTeams()
  *
  * Check current player's team and switch to other.
  * --------------------------------------------------------------------- */
@@ -103,18 +88,18 @@ public Action:SwitchTeams()
 	for (new client = 1; client <= MaxClients; client++)
 	{
 		// Checking clients
-		if (IsClientInGame(client) && (GetClientTeam(client) == ALLIES)) // is player on US?
+		if (IsClientInGame(client) && (GetClientTeam(client) == Team_Allies)) // is player on US?
 		{
 			// Yep, get the other team
-			ChangeClientTeam(client, SPEC);
-			ChangeClientTeam(client, AXIS);
+			ChangeClientTeam(client, Team_Spectator);
+			ChangeClientTeam(client, Team_Axis);
 			ShowVGUIPanel(client, "class_ger", INVALID_HANDLE, false);
 		}
-		else if (IsClientInGame(client) && (GetClientTeam(client) == AXIS)) // Nope, he is GER
+		else if (IsClientInGame(client) && (GetClientTeam(client) == Team_Axis)) // Nope, he is GER
 		{
 			// You probably want ask - why players moving to spectators? Its needed for switching teams without deaths (old DoD:S bug: you dont die when you joined spectators)
-			ChangeClientTeam(client, SPEC);
-			ChangeClientTeam(client, ALLIES);
+			ChangeClientTeam(client, Team_Spectator);
+			ChangeClientTeam(client, Team_Allies);
 			ShowVGUIPanel(client, "class_us", INVALID_HANDLE, false);
 		}
 	}
