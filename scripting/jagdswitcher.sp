@@ -1,38 +1,39 @@
 /**
-* team switcher for jagd by Root
+* Jagd Switcher by Root
 *
 * Description:
-*   Plugin switch teams at round start on dod_jagd (for balanced gameplay). Plugin switching teams in the same way as done on gravelpit in TF2
+*   Plugin switch teams at round start on dod_jagd (for balanced gameplay).
+*   Plugin switching teams in the same way as done on gravelpit in TF2.
 *
 * Version 1.0
 * Changelog & more info at http://goo.gl/4nKhJ
 */
 
-#pragma semicolon 1 // Force strict semicolon mode.
-
 // ====[ INCLUDES ]====================================================
 #include <sourcemod>
 
 // ====[ CONSTANTS ]===================================================
-#define PLUGIN_NAME			"Jagd balancer"
-#define PLUGIN_VERSION		"1.0"
+#define PLUGIN_NAME    "Jagd switcher"
+#define PLUGIN_VERSION "1.0"
 
 enum
 {
-	Team_Spectator = 1,
+	Team_Unassigned,
+	Team_Spectator,
 	Team_Allies,
-	Team_Axis,
-};
+	Team_Axis
+}
 
 // ====[ PLUGIN ]======================================================
 public Plugin:myinfo =
 {
-	name			= PLUGIN_NAME,
-	author			= "Root",
-	description		= "Swap teams at round start on jagd",
-	version			= PLUGIN_VERSION,
-	url				= "http://dodsplugins.com/"
-};
+	name        = PLUGIN_NAME,
+	author      = "Root",
+	description = "Swap teams at round start on jagd",
+	version     = PLUGIN_VERSION,
+	url         = "http://dodsplugins.com/"
+}
+
 
 /* OnPluginStart()
  *
@@ -41,10 +42,20 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	// Create convars
-	CreateConVar("jagdswitcher_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_NOTIFY|FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED);
+	CreateConVar("jagdswitcher_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_NOTIFY|FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED)
+}
 
-	// Hook events
-	HookEvent("dod_round_start", Event_round_start, EventHookMode_Pre);
+/* OnMapStart()
+ *
+ * When the map starts.
+ * ------------------------------------------------------------------ */
+public OnMapStart()
+{
+	// Check if current map is jagd or strand, or strand_rc1
+	decl String:curmap[64]
+	GetCurrentMap(curmap, sizeof(curmap))
+	if (StrEqual(curmap, "dod_jagd") || StrEqual(curmap, "dod_strand") || StrEqual(curmap, "dod_strand_rc1"))
+		HookEvent("dod_round_start", Event_round_start, EventHookMode_Pre)
 }
 
 /* Event_round_starts()
@@ -53,15 +64,7 @@ public OnPluginStart()
  * --------------------------------------------------------------------- */
 public Event_round_start(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	// Check if current map is jagd
-	decl String:curmap[64];
-	GetCurrentMap(curmap, sizeof(curmap));
-	if (StrEqual(curmap, "dod_jagd") || StrEqual(curmap, "dod_strand"))
-	{
-		// Yep, its jagd. Let's call switch event when round starts and event when player changes team
-		HookEvent("player_team", Event_changeteam, EventHookMode_Pre);
-		SwitchTeams();
-	}
+	HookEvent("player_team", Event_changeteam, EventHookMode_Pre)
 }
 
 /* Event_changeteam()
@@ -70,12 +73,12 @@ public Event_round_start(Handle:event, const String:name[], bool:dontBroadcast)
  * --------------------------------------------------------------------- */
 public Action:Event_changeteam(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	// Lets hide message '*Player joined Wermacht/U.S'
+	// Lets hide message '*Player joined Wermacht/U.S' when round starts
 	if (!dontBroadcast && !GetEventBool(event, "silent"))
 	{
-		SetEventBroadcast(event, true);
+		SetEventBroadcast(event, true)
 	}
-	return Plugin_Continue;
+	return Plugin_Continue
 }
 
 /* SwitchTeams()
@@ -91,18 +94,18 @@ public Action:SwitchTeams()
 		if (IsClientInGame(client) && (GetClientTeam(client) == Team_Allies)) // is player on US?
 		{
 			// Yep, get the other team
-			ChangeClientTeam(client, Team_Spectator);
-			ChangeClientTeam(client, Team_Axis);
-			ShowVGUIPanel(client, "class_ger", INVALID_HANDLE, false);
+			ChangeClientTeam(client, Team_Spectator)
+			ChangeClientTeam(client, Team_Axis)
+			ShowVGUIPanel(client, "class_ger", INVALID_HANDLE, false)
 		}
-		else if (IsClientInGame(client) && (GetClientTeam(client) == Team_Axis)) // Nope, he is GER
+		else if (IsClientInGame(client) && (GetClientTeam(client) == Team_Axis)) // Nope
 		{
-			// You probably want ask - why players moving to spectators? Its needed for switching teams without deaths (old DoD:S bug: you dont die when you joined spectators)
-			ChangeClientTeam(client, Team_Spectator);
-			ChangeClientTeam(client, Team_Allies);
-			ShowVGUIPanel(client, "class_us", INVALID_HANDLE, false);
+			// Needed to spec players to switching teams without deaths (DoDS bug: you dont die when you join spectators)
+			ChangeClientTeam(client, Team_Spectator)
+			ChangeClientTeam(client, Team_Allies)
+			ShowVGUIPanel(client, "class_us", INVALID_HANDLE, false)
 		}
 	}
-	UnhookEvent("player_team", Event_changeteam, EventHookMode_Pre);
-	return Plugin_Handled;
+	UnhookEvent("player_team", Event_changeteam, EventHookMode_Pre)
+	return Plugin_Handled
 }
