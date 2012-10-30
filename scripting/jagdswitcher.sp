@@ -38,39 +38,38 @@ public Plugin:myinfo =
 /* OnPluginStart()
  *
  * When the plugin starts up.
- * --------------------------------------------------------------------- */
+ * -------------------------------------------------------------------- */
 public OnPluginStart()
 {
 	// Create convars
 	CreateConVar("jagdswitcher_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_NOTIFY|FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED)
-}
 
-/* OnMapStart()
- *
- * When the map starts.
- * ------------------------------------------------------------------ */
-public OnMapStart()
-{
-	// Check if current map is jagd or strand, or strand_rc1
-	decl String:curmap[64]
-	GetCurrentMap(curmap, sizeof(curmap))
-	if (StrEqual(curmap, "dod_jagd") || StrEqual(curmap, "dod_strand") || StrEqual(curmap, "dod_strand_rc1"))
-		HookEvent("dod_round_start", Event_round_start, EventHookMode_Pre)
+	// Hook events
+	HookEvent("dod_round_start", Event_round_start, EventHookMode_Pre)
 }
 
 /* Event_round_starts()
  *
  * Called when a round starts.
- * --------------------------------------------------------------------- */
+ * -------------------------------------------------------------------- */
 public Event_round_start(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	HookEvent("player_team", Event_changeteam, EventHookMode_Pre)
+	// Getting current map
+	decl String:curmap[64]
+	GetCurrentMap(curmap, sizeof(curmap))
+
+	// Check if curmap is equal to jagd or strand, and hook events then
+	if (StrEqual(curmap, "dod_jagd") || StrEqual(curmap, "dod_strand") || StrEqual(curmap, "dod_strand_rc1"))
+	{
+		HookEvent("player_team", Event_changeteam, EventHookMode_Pre)
+		SwitchTeams()
+	}
 }
 
 /* Event_changeteam()
  *
  * Called when a player changes team.
- * --------------------------------------------------------------------- */
+ * -------------------------------------------------------------------- */
 public Action:Event_changeteam(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	// Lets hide message '*Player joined Wermacht/U.S' when round starts
@@ -84,7 +83,7 @@ public Action:Event_changeteam(Handle:event, const String:name[], bool:dontBroad
 /* SwitchTeams()
  *
  * Check current player's team and switch to other.
- * --------------------------------------------------------------------- */
+ * -------------------------------------------------------------------- */
 public Action:SwitchTeams()
 {
 	// Switch function written by <eVa>Dog
@@ -100,7 +99,7 @@ public Action:SwitchTeams()
 		}
 		else if (IsClientInGame(client) && (GetClientTeam(client) == Team_Axis)) // Nope
 		{
-			// Needed to spec players to switching teams without deaths (DoDS bug: you dont die when you join spectators)
+			// Needed to spectate players to switching teams without deaths (DoDS bug: you dont die when you join spectators)
 			ChangeClientTeam(client, Team_Spectator)
 			ChangeClientTeam(client, Team_Allies)
 			ShowVGUIPanel(client, "class_us", INVALID_HANDLE, false)
