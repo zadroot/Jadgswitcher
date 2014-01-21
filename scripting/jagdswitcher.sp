@@ -29,7 +29,7 @@ public Plugin:myinfo =
 	description = "Swap teams at round start on jagd",
 	version     = PLUGIN_VERSION,
 	url         = "http://dodsplugins.com/"
-}
+};
 
 
 /* OnPluginStart()
@@ -38,11 +38,9 @@ public Plugin:myinfo =
  * -------------------------------------------------------------------- */
 public OnPluginStart()
 {
-	// Create convars
-	CreateConVar("jagdswitcher_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_NOTIFY|FCVAR_DONTRECORD)
-
-	// Hook pre-round start event
-	HookEvent("dod_round_start", Event_round_start, EventHookMode_Pre)
+	// Create version convar for this plugin and hook pre-round start event
+	CreateConVar("jagdswitcher_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	HookEvent("dod_round_start", Event_round_start, EventHookMode_Pre);
 }
 
 /* Event_round_starts()
@@ -51,17 +49,13 @@ public OnPluginStart()
  * -------------------------------------------------------------------- */
 public Event_round_start(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	// Get the current map
-	decl String:curmap[64]
-	GetCurrentMap(curmap, sizeof(curmap))
-
-	// Check if current map is equal to jagd/strand
-	if (StrEqual(curmap, "dod_jagd")
-	||  StrEqual(curmap, "dod_strand")
-	||  StrEqual(curmap, "dod_strand_rc1"))
+	// Check if current map is equal to jagd or strand
+	decl String:curmap[PLATFORM_MAX_PATH];
+	GetCurrentMap(curmap, sizeof(curmap));
+	if (StrEqual(curmap, "dod_jagd", false) || StrEqual(curmap, "dod_strand", false) || StrEqual(curmap, "dod_strand_rc1", false))
 	{
-		HookEvent("player_team", Event_changeteam, EventHookMode_Pre)
-		SwitchTeams()
+		HookEvent("player_team", Event_changeteam, EventHookMode_Pre);
+		SwitchTeams();
 	}
 }
 
@@ -71,12 +65,7 @@ public Event_round_start(Handle:event, const String:name[], bool:dontBroadcast)
  * -------------------------------------------------------------------- */
 public Action:Event_changeteam(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	// Lets suppress '*Player joined Wermacht/U.S' message
-	if (!dontBroadcast && !GetEventBool(event, "silent"))
-	{
-		SetEventBroadcast(event, true)
-	}
-	return Plugin_Continue
+	SetEventBroadcast(event, true);
 }
 
 /* SwitchTeams()
@@ -88,24 +77,24 @@ public Action:SwitchTeams()
 	// Switch function written by <eVa> Dog
 	for (new client = 1; client <= MaxClients; client++)
 	{
-		// Make sure all players is in game
+		// Make sure all looped players are ingame
 		if (IsClientInGame(client))
 		{
-			if (GetClientTeam(client) == Team_Allies) // is player on allies?
+			if (GetClientTeam(client) == Team_Allies) // is player on allies ?
 			{
 				// Yep, get the other team
-				ChangeClientTeam(client, Team_Spectator)
-				ChangeClientTeam(client, Team_Axis)
-				ShowVGUIPanel(client, "class_ger", INVALID_HANDLE, false)
+				ChangeClientTeam(client, Team_Spectator);
+				ChangeClientTeam(client, Team_Axis);
+				ShowVGUIPanel(client, "class_ger", INVALID_HANDLE, false);
 			}
-			else if (GetClientTeam(client) == Team_Axis) // Nope.avi
+			else if (GetClientTeam(client) == Team_Axis) // Nope !
 			{
 				// Needed to spectate players to switching teams without deaths (DoD:S issue: you dont die when you join spectators)
-				ChangeClientTeam(client, Team_Spectator)
-				ChangeClientTeam(client, Team_Allies)
-				ShowVGUIPanel(client, "class_us", INVALID_HANDLE, false)
+				ChangeClientTeam(client, Team_Spectator);
+				ChangeClientTeam(client, Team_Allies);
+				ShowVGUIPanel(client, "class_us", INVALID_HANDLE, false);
 			}
 		}
 	}
-	UnhookEvent("player_team", Event_changeteam, EventHookMode_Pre)
+	UnhookEvent("player_team", Event_changeteam, EventHookMode_Pre);
 }
