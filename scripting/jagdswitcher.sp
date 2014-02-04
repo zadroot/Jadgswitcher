@@ -29,7 +29,7 @@ public Plugin:myinfo =
 	description = "Swap teams at round start on jagd",
 	version     = PLUGIN_VERSION,
 	url         = "http://dodsplugins.com/"
-};
+}
 
 
 /* OnPluginStart()
@@ -49,7 +49,7 @@ public OnPluginStart()
  * -------------------------------------------------------------------- */
 public Event_round_start(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	// Check if current map is equal to jagd or strand
+	// Check if current map is actually jagd or strand
 	decl String:curmap[PLATFORM_MAX_PATH];
 	GetCurrentMap(curmap, sizeof(curmap));
 	if (StrEqual(curmap, "dod_jagd", false) || StrEqual(curmap, "dod_strand", false) || StrEqual(curmap, "dod_strand_rc1", false))
@@ -80,14 +80,14 @@ public Action:SwitchTeams()
 		// Make sure all looped players are ingame
 		if (IsClientInGame(client))
 		{
-			if (GetClientTeam(client) == Team_Allies) // is player on allies ?
+			if (GetClientTeam(client) == Team_Allies) // is player is on allies ?
 			{
 				// Yep, get the other team
 				ChangeClientTeam(client, Team_Spectator);
 				ChangeClientTeam(client, Team_Axis);
 				ShowVGUIPanel(client, "class_ger", INVALID_HANDLE, false);
 			}
-			else if (GetClientTeam(client) == Team_Axis) // Nope !
+			else if (GetClientTeam(client) == Team_Axis) // Nope
 			{
 				// Needed to spectate players to switching teams without deaths (DoD:S issue: you dont die when you join spectators)
 				ChangeClientTeam(client, Team_Spectator);
